@@ -50,7 +50,7 @@ test_organized[test_organized < 0] = -test_organized[test_organized < 0]
 ts = test_organized[selected_names].values
 
 # load model
-weights = np.load('hw1.npy')
+weights = np.load('hw1_best.npy')
 
 # make prediction
 answer = np.dot(ts, weights)
