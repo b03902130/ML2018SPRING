@@ -56,13 +56,13 @@ def sigmoid(x):
     return np.clip(tmp, 1e-8, 1-(1e-8))
 
 
-raw_testX = pd.read_csv('test.csv')
-raw_X_test = pd.read_csv('test_X.csv')
+raw_testX = pd.read_csv(test_path)
+raw_X_test = pd.read_csv(testX_path )
 
-parameters = np.load('logistic_p.npy')
-bias = np.load('logistic_b.npy')
-mean = np.load('logistic_m.npy')
-std = np.load('logistic_s.npy')
+parameters = np.load('logistic_model/logistic_p.npy')
+bias = np.load('logistic_model/logistic_b.npy')
+mean = np.load('logistic_model/logistic_m.npy')
+std = np.load('logistic_model/logistic_s.npy')
 scaler = (mean, std)
 
 X_test = test_preprocesing(raw_X_test, scaler)
