@@ -170,9 +170,9 @@ def gradient_descient_adagrad(X, Y, X_, Y_, selected_names, learning_rate=0.01, 
 
 parameters, bias = gradient_descient_adagrad(X, Y, X_, Y_, selected_names, learning_rate=0.01, batch_size=100, epoch=100, sample=False)
 
-np.save('logistic_p.npy', parameters)
-np.save('logistic_b.npy', bias)
-np.save('logistic_m.npy', scaler[0])
-np.save('logistic_s.npy', scaler[1])
+np.save('logistic_model/logistic_p.npy', parameters)
+np.save('logistic_model/logistic_b.npy', bias)
+np.save('logistic_model/logistic_m.npy', scaler[0])
+np.save('logistic_model/logistic_s.npy', scaler[1])
 
 print('Model seved. Use hw2_logistic.sh to make predictions.')

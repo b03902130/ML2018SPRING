@@ -1,15 +1,20 @@
+import sys
 import pandas as pd
 import numpy as np
 import copy
 
+train_path = sys.argv[1]
+trainX_path = sys.argv[2]
+trainY_path = sys.argv[3]
+
 # RAW DATA
-raw_train = pd.read_csv('train.csv')
+raw_train = pd.read_csv(train_path )
 raw_trainX = raw_train.iloc[:, :-1]
 raw_trainY = raw_train.iloc[:, -1]
 
 # ONE-HOT ENCODING
-raw_X_train = pd.read_csv('train_X.csv')
-raw_Y_train = pd.read_csv('train_Y.csv', header=None).iloc[:, 0]
+raw_X_train = pd.read_csv(trainX_path)
+raw_Y_train = pd.read_csv(trainY_path, header=None).iloc[:, 0]
 
 
 def standardize(data, scaler=0):
@@ -103,3 +108,5 @@ np.save('generative_model/mu2.npy', mu2)
 np.save('generative_model/shared_sigma.npy', shared_sigma)
 np.save('generative_model/N1.npy', N1)
 np.save('generative_model/N2.npy', N2)
+
+print('Model saved. Use hw2_generative.sh to make predictions.')
