@@ -330,11 +330,12 @@ def infer_iter(testing, encoder, batches):
 
 
 print('Defining model')
+embedded_matrix = np.load('pretrain_embedding.npy')
 encoder = EncoderRNN(
     
     vocab_size = lang_trim.n_words, 
     embedding_size = 100,
-    embedded_matrix = np.empty((lang_trim.n_words, 100)),
+    embedded_matrix = embedded_matrix,
     hidden_size = 128, 
     n_layer = 3,
     bidir = True
