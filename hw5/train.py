@@ -49,8 +49,7 @@ def trim_word(word):
 
 
 def tokenize(sen):
-    ori_filters = '!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~'  # not really used
-    words = text_to_word_sequence(sen, filters='"#&()*+-./;<=>@[\\]^_{|}~', lower=True, split=' ')
+    words = text_to_word_sequence(sen, filters='@', lower=True, split=' ')
     words = [trim_word(word) for word in words]
     words = ['<NUM>' if re.match(r'^[0-9]+[a,p,A,P]?[m,M]?$', word) else word for word in words]
     
@@ -173,7 +172,7 @@ lang_trim.n_words
 
 # finalize the dictionary with indexing
 lang_trim.indexing()
-save_any(lang_trim, 'lang_trim_tmp')
+save_any(lang_trim, 'dictionary_tmp')
 
 
 print('Parsing training data according to dictionary')
@@ -354,5 +353,5 @@ folder = './'
 train_iter(training, validating, encoder, enopt, batches=100, iterations=5000, print_freq=100, hist=history, folder=folder)
 
 save_checkpoint([encoder, enopt], ['encoder', 'enopt'], 'model_tmp')
-print('Trained dictionary saved as: lang_trim_tmp')
+print('Trained dictionary saved as: dictionary_tmp')
 print('Trained model saved as: model_tmp')
