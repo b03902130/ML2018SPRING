@@ -14,13 +14,12 @@ import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from keras.preprocessing.text import text_to_word_sequence
 
-cuda = torch.cuda.is_available()
-
 
 def load_any(filename):
     with open(filename, 'rb') as handle:
         anything = pickle.load(handle)
     return anything
+
 
 def trim_word(word):
     trimmed = ''
@@ -37,8 +36,7 @@ def trim_word(word):
     return trimmed
 
 def tokenize(sen):
-    ori_filters = '!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~'  # not really used
-    words = text_to_word_sequence(sen, filters='"#&()*+-./;<=>@[\\]^_{|}~', lower=True, split=' ')
+    words = text_to_word_sequence(sen, filters='@', lower=True, split=' ')
     words = [trim_word(word) for word in words]
     words = ['<NUM>' if re.match(r'^[0-9]+[a,p,A,P]?[m,M]?$', word) else word for word in words]
     
@@ -184,9 +182,7 @@ def propogate_batch(mode, batch_tokens, batch_lengths, encoder, labels=None, eno
     else:
         encoder.eval()
     
-    batch_tokens = torch.LongTensor(batch_tokens.transpose())
-    if cuda:
-        batch_tokens = batch_tokens.cuda()
+    batch_tokens = torch.LongTensor(batch_tokens.transpose()).cuda()
     batch_tokens = Variable(batch_tokens) if mode == 'train' else Variable(batch_tokens, volatile=True)
     
     probs = encoder(batch_tokens, batch_lengths)
@@ -196,9 +192,7 @@ def propogate_batch(mode, batch_tokens, batch_lengths, encoder, labels=None, eno
     if mode == 'infer':
         return probs_np, predict_np
     
-    labels = torch.LongTensor(labels)
-    if cuda:
-        labels = labels.cuda()
+    labels = torch.LongTensor(labels).cuda()
     labels = Variable(labels) if mode == 'train' else Variable(labels, volatile=True)
     
     criterion = nn.NLLLoss(size_average=False)
@@ -220,7 +214,9 @@ def infer_iter(testing, encoder, batches):
     test_list, test_np, test_id = testing
     predictions = []
     probs = []
-    for start in range(0, len(test_list), batches):
+    for i, start in enumerate(range(0, len(test_list), batches)):
+        if i % 100 == 0:
+            print(str(start) + ' predictions done')
         end = min(start + batches, len(test_list))
         X = test_np[start:end]
         Xlens = np.array([len(x) for x in test_list[start:end]], dtype=np.int32)
@@ -232,37 +228,19 @@ def infer_iter(testing, encoder, batches):
 
 
 print('Defining and loading model')
-encoder1 = EncoderRNN(
+encoder = EncoderRNN(
     
-    vocab_size = 8859, 
+    vocab_size = 8883, 
     embedding_size = 100,
-    embedded_matrix = np.empty((8859, 100)),
+    embedded_matrix = np.empty((8883, 100)),
     hidden_size = 128, 
     n_layer = 3,
     bidir = True
     
-)
+).cuda()
 
-checkpoint = torch.load('model1')
-encoder1.load_state_dict(checkpoint['encoder'])
-
-encoder2 = EncoderRNN(
-    
-    vocab_size = 8884, 
-    embedding_size = 100,
-    embedded_matrix = np.empty((8884, 100)),
-    hidden_size = 128, 
-    n_layer = 3,
-    bidir = True
-    
-)
-
-checkpoint = torch.load('model2')
-encoder2.load_state_dict(checkpoint['encoder'])
-
-if cuda:
-    encoder1 = encoder1.cuda()
-    encoder2 = encoder2.cuda()
+checkpoint = torch.load('model')
+encoder.load_state_dict(checkpoint['encoder'])
 
 
 print('Loading and Preprocessing testing data')
@@ -275,22 +253,16 @@ with open(test_path, 'r', encoding='utf-8') as handle:
         data = tokenize(line)
         test_pair.append((data, index))
 
+
 print('Predicting')
-lang_trim = load_any('lang_trim1')
+lang_trim = load_any('dictionary')
 test_pair_sorted = sorted(test_pair, key=lambda x: len(x[0]), reverse=True)
 testing = unpack_pair_get_numpy(test_pair_sorted, 40)
-_, probs = infer_iter(testing, encoder1, 100)
+_, probs = infer_iter(testing, encoder, 100)
 concat_id = np.concatenate((probs, testing[2].reshape(-1,1)), axis=1)
-sort_probs1 = np.stack(sorted(concat_id, key=lambda x: x[2]))[:, :2]
-
-lang_trim = load_any('lang_trim2')
-test_pair_sorted = sorted(test_pair, key=lambda x: len(x[0]), reverse=True)
-testing = unpack_pair_get_numpy(test_pair_sorted, 40)
-_, probs = infer_iter(testing, encoder2, 100)
-concat_id = np.concatenate((probs, testing[2].reshape(-1,1)), axis=1)
-sort_probs2 = np.stack(sorted(concat_id, key=lambda x: x[2]))[:, :2]
-
-final_probs = (sort_probs1 + sort_probs2)
-predictions = (final_probs[:, 1] > final_probs[:, 0]).astype(np.int32)
+sort_probs = np.stack(sorted(concat_id, key=lambda x: x[2]))[:, :2]
+predictions = (sort_probs[:, 1] > sort_probs[:, 0]).astype(np.int32)
 pd.DataFrame(data={'id':np.arange(len(predictions)), 'label':predictions}).to_csv(sys.argv[2], columns=['id', 'label'], index=False)
+
+
 print('Done')
