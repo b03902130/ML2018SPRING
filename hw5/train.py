@@ -329,7 +329,7 @@ def infer_iter(testing, encoder, batches):
 
 
 print('Defining model')
-embedded_matrix = np.load('pretrain_embedding.npy')
+embedded_matrix = np.load('embedding.npy')
 encoder = EncoderRNN(
     
     vocab_size = lang_trim.n_words, 
